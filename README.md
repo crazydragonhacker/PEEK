@@ -25,28 +25,50 @@ Peek provides an API only. It intentionally has no UI, user accounts, history, n
 ## Architecture
 
 ```text
-                              Client
-                                |
-                                | POST /check
-                                v
-                              FastAPI API
-                                |
-                                v
-                              IPO Resolver
-                                |
-  +-------------------+-------------------+------------------+
-  |                   |                   |                  |
-  v                   v                   v                  v
-KFintech          MUFG Intime         Bigshare        Other adapters
-Adapter           Adapter             Adapter          (Maashitla/
-  |                   |                   |              Skyline)
-  v                   v                   v                  |
-Registrar API      Registrar API       CAPTCHA wall          |
-  |                   |                   |                  |
-  +-------------------+-------------------+------------------+
-                                |
-                                v
-                        Normalized result
+                                                     ┌─────────────────┐
+                                                     │   API Client    │
+                                                     │ Swagger / App   │
+                                                     └────────┬────────┘
+                                                              │
+                                                              │ POST /check
+                                                              │ PAN + IPO
+                                                              ▼
+                                                     ┌─────────────────┐
+                                                     │   FastAPI API   │
+                                                     │    /check       │
+                                                     └────────┬────────┘
+                                                              │
+                                                      Resolve IPO
+                                                              │
+                                                              ▼
+                                                     ┌─────────────────┐
+                                                     │  IPO Registry   │
+                                                     └────────┬────────┘
+                                                              │
+                                                   Select registrar
+                                                              │
+                                              ┌───────────────┼───────────────┐
+                                              ▼               ▼               ▼
+                                        ┌──────────┐    ┌───────────┐   ┌──────────┐
+                                        │ KFintech │    │    MUFG   │   │ Bigshare │
+                                        └────┬─────┘    │  Intime   │   └────┬─────┘
+                                             │          └─────┬─────┘        │
+                                             ▼                ▼              ▼
+                                        Registrar        Registrar       CAPTCHA /
+                                        response         response        unavailable
+                                             │                │              │
+                                             └────────────────┼──────────────┘
+                                                              ▼
+                                                     ┌─────────────────┐
+                                                     │Result Normalizer│
+                                                     └────────┬────────┘
+                                                              ▼
+                                                  ┌──────────────────────┐
+                                                  │ allotted             │
+                                                  │ not_allotted         │
+                                                  │ not_applied          │
+                                                  │ lookup_failed        │
+                                                  └──────────────────────┘
 ```
 
 ## Supported Registrars
